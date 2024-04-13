@@ -23,8 +23,8 @@ class UserRegister(MethodView):
             abort(400, message="Username already exists. Please try another one.")
         else:
             user = UserModel(
-                username = json_data["name"],
-                password = pbkdf2_sha256.hash(json_data["password"]),
+                username=json_data["name"],
+                password=pbkdf2_sha256.hash(json_data["password"]),
             )
             user.save_to_db()
             return {"message": "User created succesfully."}, 201

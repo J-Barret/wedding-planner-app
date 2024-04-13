@@ -1,18 +1,21 @@
 from db import db
 from sqlalchemy import Column
 from sqlalchemy.sql.sqltypes import *
+from sqlalchemy.orm import Relationship
 
 class UserModel(db.Model):
 
 	__tablename__ = "users"
 	id = Column(Integer, primary_key=True)
 	username = Column(String(80), unique=True, nullable=False)
-	password = Column(String, nullable=False)
+	password = Column(String, nullable=False) #password will be stored already hashed
+	guests = Relationship("GuestModel", back_populates="user", lazy="dynamic") #so the FileModel can do "my_file.user"
 
 	def json(self):
 		return {
 			"id": self.id,
-			"username": self.username
+			"username": self.username,
+			"guests": self.guests
 		}
 
 	@classmethod
