@@ -7,7 +7,8 @@ from db import db
 from resources.user import blp as UserBlueprint
 from resources.guest import blp as GuestBlueprint
 
-def create_app(db_url = None):
+
+def create_app(test_db_url = None):
 	app = Flask(__name__)
 	#OpenAPI parameters -> for documentation purposes
 	app.config["API_TITLE"] = "Wedding planner REST API"
@@ -18,7 +19,7 @@ def create_app(db_url = None):
 	app.config["OPENAPI_SWAGGER_UI_URL"] = "https://cdn.jsdelivr.net/npm/swagger-ui-dist/"
 
 	#SQLAlchemy parameters
-	app.config["SQLALCHEMY_DATABASE_URI"] = db_url or os.getenv("DATABASE_URL", "sqlite:///data.db") #use env variable in deployment
+	app.config["SQLALCHEMY_DATABASE_URI"] = test_db_url or os.getenv("DATABASE_URL", "sqlite:///data.db") #use env variable in deployment
 	app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 	#JWT manager configuration
@@ -35,3 +36,4 @@ def create_app(db_url = None):
 	api.register_blueprint(GuestBlueprint)
 
 	return app
+

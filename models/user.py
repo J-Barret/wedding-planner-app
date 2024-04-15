@@ -11,6 +11,10 @@ class UserModel(db.Model):
 	password = Column(String, nullable=False) #password will be stored already hashed
 	guests = Relationship("GuestModel", back_populates="user", lazy="dynamic") #so the FileModel can do "my_file.user"
 
+	def __init__(self, username, password):
+		self.username = username
+		self.password = password
+
 	def json(self):
 		return {
 			"id": self.id,

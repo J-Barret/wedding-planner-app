@@ -11,7 +11,13 @@ class GuestModel(db.Model):
 	number = Column(String(9), unique=False, nullable=False) #same guest may be in many weddings (unlikely but...)
 	email = Column(String(80), unique=False, nullable=True) #mail is optional
 	user_id = Column(String, ForeignKey("users.id"), unique=False, nullable=False)
-	user = Relationship("UserModel", back_populates="guests") #so the UserModel can do "my_user.files"
+	user = Relationship("UserModel", back_populates="guests") #so the UserModel can do "my_user.guests"
+
+	def __init__(self, name, number, email, user_id):
+		self.name = name
+		self.number = number
+		self.email = email
+		self.user_id = user_id
 
 	def json(self):
 		return {
