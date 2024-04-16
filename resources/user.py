@@ -47,7 +47,7 @@ class UserLogin(MethodView):
 
 @blp.route("/refresh")
 class TokenRefresh(MethodView):
-
+    
     @jwt_required(refresh=True)
     def post(self):
         current_user = get_jwt_identity()
