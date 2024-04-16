@@ -29,6 +29,10 @@ class GuestModel(db.Model):
 			"user": self.user
 		}
 
+	@classmethod
+	def find_by_name(cls, name):
+		return cls.query.filter_by(name=name).first()
+
 	def save_to_db(self):
 		db.session.add(self)
 		db.session.commit()

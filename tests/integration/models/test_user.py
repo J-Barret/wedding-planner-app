@@ -12,6 +12,15 @@ class UserTest(BaseTest):
 			self.assertIsNotNone(UserModel.find_by_username("username1"))
 			user.delete_from_db()
 			self.assertIsNone(UserModel.find_by_username("username1"))
+	def test_find_in_db(self):
+		with self.app_context():
+			user = UserModel("username1", "password1")
+			user.save_to_db()
+			result = UserModel.find_by_username("wrong_username")
+			self.assertIsNone(result)
+			result = UserModel.find_by_username("username1")
+			self.assertIsNotNone(result)
+			self.assertEqual(result, user)
 	def test_foreign_keys(self):
 		with self.app_context():
 			user = UserModel("username1", "password1")
