@@ -67,6 +67,7 @@ class UserLogout(MethodView):
 class UserDelete(MethodView):
 
     @blp.arguments(UserSchema, location="json")
+    @jwt_required(fresh=True)
     def delete(self, json_data):
         user = UserModel.find_by_username(json_data["name"])
         if user is None:
