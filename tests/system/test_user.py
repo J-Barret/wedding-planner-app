@@ -1,7 +1,7 @@
 from models.user import UserModel
 from tests.base_test import BaseTest
 from werkzeug.datastructures import Authorization
-from flask_jwt_extended import decode_token, get_jwt_identity
+from flask_jwt_extended import decode_token
 import json
 from blocklist import BLOCKLIST
 
@@ -114,6 +114,5 @@ class UserTest(BaseTest):
 				auth = Authorization(auth_type="bearer", token=new_access_token)
 				request = client.delete("/deleteUser", auth=auth, json={"name": "name1", "password": "password1"})
 				self.assertEqual(request.status_code, 401)
-				self.assertDictEqual(json.loads(request.data), {"description": "The token is not fresh.",
-																	"error": "fresh_token_required"})
+				self.assertDictEqual(json.loads(request.data), {"description": "The token is not fresh.", "error": "fresh_token_required"})
 
