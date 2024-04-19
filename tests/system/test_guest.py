@@ -7,7 +7,16 @@ import os
 from openpyxl import Workbook
 from io import BytesIO
 
-
+def fill_excel(excel_path, expected_columns, data):
+	wb = Workbook()  # create a workbook and select the active worksheet
+	ws = wb.active
+	for col, header in enumerate(expected_columns, start=1):
+		ws.cell(row=1, column=col, value=header)
+	for row, item in enumerate(data, start=2):
+		for col, value in enumerate(item, start=1):
+			ws.cell(row=row, column=col, value=value)
+	wb.save(excel_path)
+	wb.close()
 
 class GuestTest(BaseTest):
 
@@ -19,25 +28,26 @@ class GuestTest(BaseTest):
 			("name1", "number1", "email1"),
 			("name2", "number2", "email2"),
 		]
-		wb = Workbook()  #create a workbook and select the active worksheet
-		ws = wb.active
-		for col, header in enumerate(expected_columns, start=1):
-			ws.cell(row=1, column=col, value=header)
-		for row, item in enumerate(data, start=2):
-			for col, value in enumerate(item, start=1):
-				ws.cell(row=row, column=col, value=value)
-		wb.save(self.excel_path)
-		wb.close()
+		fill_excel(self.excel_path, expected_columns, data)
 
 		fd2, self.odt_path = tempfile.mkstemp(suffix=".ods")  # create a temporary .ods file
-		fd3, self.excel_wrong_format_path = tempfile.mkstemp(suffix=".xlsx") #Excel file with wrong columns (in this case, blank)
+		fd3, self.excel_empty_path = tempfile.mkstemp(suffix=".xlsx") #Excel blank file
+		fd4, self.excel_wrong_format_path = tempfile.mkstemp(suffix=".xlsx") #Excel file with wrong columns (in this case, blank)
+		expected_columns = ["name", "number"]
+		data = [
+			("name1", "number1"),
+			("name2", "number2"),
+		]
+		fill_excel(self.excel_wrong_format_path, expected_columns, data)
 
 		os.close(fd1) #important to do this to release the files (avoid issues when deleting them in tearDown()
 		os.close(fd2)
 		os.close(fd3)
+		os.close(fd4)
 
 		self.assertTrue(os.path.exists(self.excel_path))
 		self.assertTrue(os.path.exists(self.odt_path))
+		self.assertTrue(os.path.exists(self.excel_empty_path))
 		self.assertTrue(os.path.exists(self.excel_wrong_format_path))
 
 		#obtaining auth necessary to upload files
@@ -74,21 +84,30 @@ class GuestTest(BaseTest):
 					request = client.post("/upload", auth=self.auth, data={"file": (file, filename)}, content_type="multipart/form-data")
 				self.assertEqual(request.status_code, 400)
 				self.assertEqual(json.loads(request.data)["message"], "Only Excel files (.xlsx) are allowed")
+	def test_file_empty(self):
+		with self.client as client:
+			with self.app_context():
+				with open(self.excel_empty_path, "rb") as file:
+					filename = os.path.basename(self.excel_empty_path)
+					request = client.post("/upload", auth=self.auth, data={"file": (file, filename)}, content_type="multipart/form-data")
+				self.assertEqual(request.status_code, 400)
+				self.assertEqual(json.loads(request.data)["message"], "Uploaded file is not a valid Excel file. Please check file is not empty")
 	def test_file_wrong_format(self):
-		pass
-		# with self.client as client:
-		# 	with self.app_context():
-		# 		with open(self.excel_wrong_format_path, "rb") as file:
-		# 			filename = os.path.basename(self.excel_wrong_format_path)
-		# 			request = client.post("/upload", auth=self.auth, data={"file": (file, filename)}, content_type="multipart/form-data")
-		# 		self.assertEqual(request.status_code, 400)
-		# 		self.assertEqual(json.loads(request.data)["message"], "Excel format is not correct")
+		with self.client as client:
+			with self.app_context():
+				with open(self.excel_wrong_format_path, "rb") as file:
+					filename = os.path.basename(self.excel_wrong_format_path)
+					request = client.post("/upload", auth=self.auth, data={"file": (file, filename)}, content_type="multipart/form-data")
+				self.assertEqual(request.status_code, 400)
+				self.assertEqual(json.loads(request.data)["message"], "Excel format is not correct.")
 
 	def tearDown(self):
 		super().tearDown() #calling parent class setUp to avoid overwriting it with the instructions below
 		os.remove(self.excel_path)
 		os.remove(self.excel_wrong_format_path)
 		os.remove(self.odt_path)
+		os.remove(self.excel_empty_path)
 		self.assertFalse(os.path.exists(self.excel_path))
 		self.assertFalse(os.path.exists(self.odt_path))
 		self.assertFalse(os.path.exists(self.excel_wrong_format_path))
+		self.assertFalse(os.path.exists(self.excel_empty_path))

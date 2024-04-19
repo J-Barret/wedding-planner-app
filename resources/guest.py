@@ -7,7 +7,9 @@ from flask_jwt_extended import (
     jwt_required,
 )
 import pandas as pd
+import zipfile
 from models.guest import GuestModel
+from werkzeug.exceptions import HTTPException
 
 blp = Blueprint("Guests", "guests", description="Operations on guests")
 
@@ -22,14 +24,18 @@ class ExcelUpload(MethodView):
         file = request.files["file"]
         if file.filename.endswith(".xlsx"):
             try:
-                df = pd.read_excel(file) #output is a pandas DataFrame object
+                df = pd.read_excel(file, engine="openpyxl") #output is a pandas DataFrame object
                 expected_columns = ["name", "number", "email"]
-                if not all(col in df.columns for col in expected_columns):
-                    abort(400, message="Excel format is not correct")
+                if not set(expected_columns).issubset(df.columns) or len(df.columns) != len(expected_columns):
+                    #abort() statements inside a try() block won't be executed there,
+                    #they raise a HTTP exception that must be handled outside, or use a return()
+                    return {"message": "Excel format is not correct."}, 400
                 for index, row in df.iterrows():
                     guest = GuestModel(name=row["name"], number=row["number"], email=row["email"], user_id=current_user)
                     guest.save_to_db()
                 return {"message": "Guests added to database succesfully."}, 201
+            except zipfile.BadZipfile:
+                abort(400, message="Uploaded file is not a valid Excel file. Please check file is not empty")
             except Exception as e:
                 abort(500, message=f"Internal server error: {e}")
         else:
