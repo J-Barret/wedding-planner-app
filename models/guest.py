@@ -12,22 +12,16 @@ class GuestModel(db.Model):
 	email = Column(String(80), unique=False, nullable=True) #mail is optional
 	user_id = Column(String, ForeignKey("users.id"), unique=False, nullable=False)
 	user = Relationship("UserModel", back_populates="guests") #so the UserModel can do "my_user.guests"
+	status = Column(Enum("Pending", "Confirmed", "Declined"), unique=False, nullable=False)
+	wedding_id = Column(Integer, unique=False, nullable=False) #several guests will have same wedding ID
 
-	def __init__(self, name, number, email, user_id):
+	def __init__(self, name, number, email, user_id, wedding_id):
 		self.name = name
 		self.number = number
 		self.email = email
 		self.user_id = user_id
-
-	def json(self):
-		return {
-			"id": self.id,
-			"name": self.name,
-			"number": self.number,
-			"email": self.email,
-			"user_id": self.user_id,
-			"user": self.user
-		}
+		self.status = "Pending" #default init value
+		self.wedding_id = wedding_id
 
 	@classmethod
 	def find_by_name(cls, name):

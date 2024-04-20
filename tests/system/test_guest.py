@@ -23,10 +23,10 @@ class GuestTest(BaseTest):
 	def setUp(self):
 		super().setUp() #calling parent class setUp to avoid overwriting it with the instructions below
 		fd1, self.excel_path = tempfile.mkstemp(suffix=".xlsx") #create a temporary Excel file
-		expected_columns = ["name", "number", "email"]
+		expected_columns = ["name", "number", "email", "wedding_id"]
 		data = [
-			("name1", "number1", "email1"),
-			("name2", "number2", "email2"),
+			("name1", "number1", "email1", "wedding_id1"),
+			("name2", "number2", "email2", "wedding_id1"),
 		]
 		fill_excel(self.excel_path, expected_columns, data)
 
@@ -66,8 +66,8 @@ class GuestTest(BaseTest):
 					request = client.post("/upload", auth=self.auth, data={"file": (file, filename)}, content_type="multipart/form-data")
 				self.assertEqual(request.status_code, 201)
 				self.assertEqual(json.loads(request.data)["message"], "Guests added to database succesfully.")
-				guest1 = GuestModel("name1", "number1", "email1", "1")
-				guest2 = GuestModel("name2", "number2", "email2", "1")
+				guest1 = GuestModel("name1", "number1", "email1", "1", "wedding_id1")
+				guest2 = GuestModel("name2", "number2", "email2", "1", "wedding_id1")
 				self.assertIsNotNone(GuestModel.find_by_name(guest1.name))
 				self.assertIsNotNone(GuestModel.find_by_name(guest2.name))
 	def test_file_missing(self):
@@ -100,6 +100,25 @@ class GuestTest(BaseTest):
 					request = client.post("/upload", auth=self.auth, data={"file": (file, filename)}, content_type="multipart/form-data")
 				self.assertEqual(request.status_code, 400)
 				self.assertEqual(json.loads(request.data)["message"], "Excel format is not correct.")
+	def test_same_wedding_id(self):
+		with self.client as client:
+			with self.app_context():
+				with open(self.excel_path, "rb") as file:
+					filename = os.path.basename(self.excel_path)
+					client.post("/upload", auth=self.auth, data={"file": (file, filename)}, content_type="multipart/form-data")
+				with open(self.excel_path, "rb") as file:
+					filename = os.path.basename(self.excel_path)
+					request = client.post("/upload", auth=self.auth, data={"file": (file, filename)}, content_type="multipart/form-data")
+				self.assertEqual(request.status_code, 400)
+				self.assertEqual(json.loads(request.data)["message"], "A guest list with this wedding ID for this user already exists.")
+	def test_default_status_value(self):
+		with self.client as client:
+			with self.app_context():
+				with open(self.excel_path, "rb") as file:
+					filename = os.path.basename(self.excel_path)
+					client.post("/upload", auth=self.auth, data={"file": (file, filename)}, content_type="multipart/form-data")
+				guest = GuestModel.find_by_name("name1")
+				self.assertEqual(guest.status, "Pending")
 
 	def tearDown(self):
 		super().tearDown() #calling parent class setUp to avoid overwriting it with the instructions below

@@ -25,8 +25,8 @@ class UserTest(BaseTest):
 		with self.app_context():
 			user = UserModel("username1", "password1")
 			user.save_to_db() #important to do this in this order, so SQL assigns user.id value (nullable=False in GuestModel)
-			guest1 = GuestModel("guest1", "number1", "email1", user.id)
-			guest2 = GuestModel("guest2", "number2", "email2", user.id)
+			guest1 = GuestModel("guest1", "number1", "email1", user.id, "wedding_id1")
+			guest2 = GuestModel("guest2", "number2", "email2", user.id, "wedding_id1")
 			guest1.save_to_db()
 			guest2.save_to_db()
 			self.assertEqual(guest1.user, user)
